@@ -4,7 +4,7 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-typedef pcl::PointXYZI PointType;
+typedef pcl::PointXYZ PointType;
 
 
 #endif

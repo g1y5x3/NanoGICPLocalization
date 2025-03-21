@@ -49,7 +49,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/registration/registration.h>
 
-typedef pcl::PointXYZI PointType;
+typedef pcl::PointXYZ PointType;
 
 namespace nano_gicp {
 
