@@ -15,16 +15,22 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(PCL REQUIRED)
+find_package(pcl_conversions REQUIRED)
 
-include_directories(${PCL_INCLUDE_DIRS})
+include_directories(
+  include
+  ${PCL_INCLUDE_DIRS}
+)
 
 add_executable(pcd_localization src/localization.cpp)
 target_link_libraries(pcd_localization
   ${PCL_LIBRARIES}
 )
+
 ament_target_dependencies(pcd_localization 
   rclcpp
   sensor_msgs
+  pcl_conversions
 )
 
 install(TARGETS

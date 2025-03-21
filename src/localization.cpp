@@ -4,13 +4,16 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "pcl/io/pcd_io.h"
 #include "pcl/point_types.h"
+#include <pcl_conversions/pcl_conversions.h>
+// #include <nano_gicp/nano_gicp.hpp>
 
 class LocalizationPublisher : public rclcpp::Node
 {
     public: 
         LocalizationPublisher()
         : Node("pcd_localization"),
-          map_cloud_(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>())
+          map_cloud_(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>()),
+          current_scan_(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>())
         {
             // Declare parameters with default values
             this->declare_parameter("pointcloud_topic", "/spot/lidar/points");
@@ -46,10 +49,24 @@ class LocalizationPublisher : public rclcpp::Node
             RCLCPP_INFO(this->get_logger(), "  Frame ID: %s", msg->header.frame_id.c_str());
             RCLCPP_INFO(this->get_logger(), "  Width: %u", msg->width);
             RCLCPP_INFO(this->get_logger(), "  Height: %u", msg->height);
+
+            // Convert sensor_msgs::PointCloud2 to pcl::PointCloud
+            pcl::fromROSMsg(*msg, *this->current_scan_);
+            if (this->current_scan_->points.size() < 100)
+            {
+                RCLCPP_FATAL(this->get_logger(), "Low number of points!");
+                return;          
+            }
+            
+            // Get current times 
+            // double then = this->now().seconds();
         }
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidarsub_;
         pcl::PointCloud<pcl::PointXYZ>::Ptr map_cloud_;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr current_scan_;
+        // double curr_frame_stamp;
+        // double prev_frame_stamp;
 };
 
 int main(int argc, char * argv[])
