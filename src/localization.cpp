@@ -5,15 +5,15 @@
 #include "pcl/io/pcd_io.h"
 #include "pcl/point_types.h"
 #include <pcl_conversions/pcl_conversions.h>
-// #include <nano_gicp/nano_gicp.hpp>
+#include <nano_gicp/nano_gicp.hpp>
 
 class LocalizationPublisher : public rclcpp::Node
 {
     public: 
         LocalizationPublisher()
         : Node("pcd_localization"),
-          map_cloud_(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>()),
-          current_scan_(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>())
+          map_cloud(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>()),
+          input_scan(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>())
         {
             // Declare parameters with default values
             this->declare_parameter("pointcloud_topic", "/spot/lidar/points");
@@ -29,13 +29,13 @@ class LocalizationPublisher : public rclcpp::Node
 
             // Load map file
             std::string map_path = this->get_parameter("map_path").as_string(); 
-            if (pcl::io::loadPCDFile<pcl::PointXYZ>(map_path, *map_cloud_) == -1)
+            if (pcl::io::loadPCDFile<pcl::PointXYZ>(map_path, *map_cloud) == -1)
             {
                 RCLCPP_ERROR(this->get_logger(), "Failed to load map file: %s", map_path.c_str());
                 return;
             }
 
-            RCLCPP_INFO(this->get_logger(), "Successfully loaded map with %zu points", map_cloud_->size());
+            RCLCPP_INFO(this->get_logger(), "Successfully loaded map with %zu points", map_cloud->size());
             
             RCLCPP_INFO(this->get_logger(), "Localization node initialized.");
 
@@ -51,8 +51,8 @@ class LocalizationPublisher : public rclcpp::Node
             RCLCPP_INFO(this->get_logger(), "  Height: %u", msg->height);
 
             // Convert sensor_msgs::PointCloud2 to pcl::PointCloud
-            pcl::fromROSMsg(*msg, *this->current_scan_);
-            if (this->current_scan_->points.size() < 100)
+            pcl::fromROSMsg(*msg, *this->input_scan);
+            if (this->input_scan->points.size() < 100)
             {
                 RCLCPP_FATAL(this->get_logger(), "Low number of points!");
                 return;          
@@ -63,8 +63,8 @@ class LocalizationPublisher : public rclcpp::Node
         }
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidarsub_;
-        pcl::PointCloud<pcl::PointXYZ>::Ptr map_cloud_;
-        pcl::PointCloud<pcl::PointXYZ>::Ptr current_scan_;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr map_cloud;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr input_scan;
         // double curr_frame_stamp;
         // double prev_frame_stamp;
 };
