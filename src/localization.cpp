@@ -12,15 +12,20 @@ class LocalizationPublisher : public rclcpp::Node
         : Node("pcd_localization"),
           map_cloud_(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>())
         {
+            // Declare parameters with default values
+            this->declare_parameter("pointcloud_topic", "/spot/lidar/points");
+            this->declare_parameter("map_path", "src/spot_ros2_gazebo/spot_navigation/maps/simple_tunnel.pcd");
+
             // Subcribe to LiDAR inputs
+            std::string pointcloud_topic = this->get_parameter("pointcloud_topic").as_string();
             lidarsub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-                "/spot/lidar/points", 10, 
+                pointcloud_topic, 10, 
                 std::bind(&LocalizationPublisher::icp_callback, this, std::placeholders::_1));
 
             RCLCPP_INFO(this->get_logger(), "Subscribed to /spot/lidar/points");
 
             // Load map file
-            const std::string map_path = "/root/ros2_ws/src/spot_ros2_gazebo/spot_navigation/maps/simple_tunnel.pcd";
+            std::string map_path = this->get_parameter("map_path").as_string(); 
             if (pcl::io::loadPCDFile<pcl::PointXYZ>(map_path, *map_cloud_) == -1)
             {
                 RCLCPP_ERROR(this->get_logger(), "Failed to load map file: %s", map_path.c_str());
