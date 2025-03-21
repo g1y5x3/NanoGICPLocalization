@@ -15,6 +15,15 @@ class LocalizationPublisher : public rclcpp::Node
           map_cloud(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>()),
           input_scan(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>())
         {
+            // nano_gicp init
+            this->gicp.setCorrespondenceRandomness(20);
+            this->gicp.setMaxCorrespondenceDistance(std::sqrt(std::numeric_limits<double>::max()));
+            this->gicp.setMaximumIterations(64);
+            this->gicp.setTransformationEpsilon(0.0005);
+            this->gicp.setEuclideanFitnessEpsilon(-std::numeric_limits<double>::max());
+            this->gicp.setRANSACIterations(0);
+            this->gicp.setRANSACOutlierRejectionThreshold(0.05);
+
             // Declare parameters with default values
             this->declare_parameter("pointcloud_topic", "/spot/lidar/points");
             this->declare_parameter("map_path", "src/spot_ros2_gazebo/spot_navigation/maps/simple_tunnel.pcd");
@@ -44,7 +53,6 @@ class LocalizationPublisher : public rclcpp::Node
     private:
         void icp_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) const
         {
-            // Basic information about the point cloud
             RCLCPP_INFO(this->get_logger(), "Received point cloud:");
             RCLCPP_INFO(this->get_logger(), "  Frame ID: %s", msg->header.frame_id.c_str());
             RCLCPP_INFO(this->get_logger(), "  Width: %u", msg->width);
@@ -57,16 +65,19 @@ class LocalizationPublisher : public rclcpp::Node
                 RCLCPP_FATAL(this->get_logger(), "Low number of points!");
                 return;          
             }
-            
+
             // Get current times 
             // double then = this->now().seconds();
+
+            // Set the origin of /map frame
+            // this->gicp_s2s.setInputTarget(this->map_cloud);
+            // this->gicp_s2s
         }
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidarsub_;
         pcl::PointCloud<pcl::PointXYZ>::Ptr map_cloud;
         pcl::PointCloud<pcl::PointXYZ>::Ptr input_scan;
-        // double curr_frame_stamp;
-        // double prev_frame_stamp;
+        nano_gicp::NanoGICP<PointType, PointType> gicp;
 };
 
 int main(int argc, char * argv[])
