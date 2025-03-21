@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(pcd_localization)
+project(NanoGICPLocalization)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -42,16 +42,16 @@ target_link_libraries(nano_gicp ${PCL_LIBRARIES} OpenMP::OpenMP_CXX nanoflann)
 ament_target_dependencies(nano_gicp)
 
 # localization
-add_executable(pcd_localization src/localization.cpp)
-target_link_libraries(pcd_localization ${PCL_LIBRARIES} OpenMP::OpenMP_CXX Threads::Threads nano_gicp)
-ament_target_dependencies(pcd_localization 
+add_executable(nano_gicp_loc src/nano_gicp_localization.cpp)
+target_link_libraries(nano_gicp_loc ${PCL_LIBRARIES} OpenMP::OpenMP_CXX Threads::Threads nano_gicp)
+ament_target_dependencies(nano_gicp_loc 
   rclcpp
   sensor_msgs
   pcl_conversions
 )
 
 install(TARGETS
-  pcd_localization
+  nano_gicp_loc
   DESTINATION lib/${PROJECT_NAME}
 )
 ament_export_include_directories(include)

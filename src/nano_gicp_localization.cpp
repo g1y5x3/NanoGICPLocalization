@@ -10,11 +10,11 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <nano_gicp/nano_gicp.hpp>
 
-class LocalizationPublisher : public rclcpp::Node
+class NanoGICPLocalization : public rclcpp::Node
 {
     public: 
-        LocalizationPublisher()
-        : Node("pcd_localization"),
+        NanoGICPLocalization()
+        : Node("nano_gicp_loc"),
           map_cloud(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>()),
           input_scan(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>()),
           T(Eigen::Matrix4f::Identity())
@@ -35,7 +35,7 @@ class LocalizationPublisher : public rclcpp::Node
             // Subcribe to LiDAR inputs
             std::string pointcloud_topic = this->get_parameter("pointcloud_topic").as_string();
             lidarsub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-                pointcloud_topic, 1, std::bind(&LocalizationPublisher::icp_callback, this, std::placeholders::_1)
+                pointcloud_topic, 1, std::bind(&NanoGICPLocalization::icp_callback, this, std::placeholders::_1)
             );
 
             RCLCPP_INFO(this->get_logger(), "Subscribed to /spot/lidar/points");
@@ -112,7 +112,7 @@ class LocalizationPublisher : public rclcpp::Node
 int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<LocalizationPublisher>());
+    rclcpp::spin(std::make_shared<NanoGICPLocalization>());
     rclcpp::shutdown();
 
     return 0;
