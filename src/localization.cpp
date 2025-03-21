@@ -35,8 +35,8 @@ class LocalizationPublisher : public rclcpp::Node
             // Subcribe to LiDAR inputs
             std::string pointcloud_topic = this->get_parameter("pointcloud_topic").as_string();
             lidarsub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-                pointcloud_topic, 10, 
-                std::bind(&LocalizationPublisher::icp_callback, this, std::placeholders::_1));
+                pointcloud_topic, 1, std::bind(&LocalizationPublisher::icp_callback, this, std::placeholders::_1)
+            );
 
             RCLCPP_INFO(this->get_logger(), "Subscribed to /spot/lidar/points");
 
@@ -57,9 +57,9 @@ class LocalizationPublisher : public rclcpp::Node
         void icp_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
         {
             RCLCPP_INFO(this->get_logger(), "Received point cloud:");
-            RCLCPP_INFO(this->get_logger(), "  Frame ID: %s", msg->header.frame_id.c_str());
-            RCLCPP_INFO(this->get_logger(), "  Width: %u", msg->width);
-            RCLCPP_INFO(this->get_logger(), "  Height: %u", msg->height);
+            RCLCPP_INFO(this->get_logger(), "Frame ID: %s", msg->header.frame_id.c_str());
+            RCLCPP_INFO(this->get_logger(), "Width: %u", msg->width);
+            RCLCPP_INFO(this->get_logger(), "Height: %u", msg->height);
 
             // Convert sensor_msgs::PointCloud2 to pcl::PointCloud
             pcl::fromROSMsg(*msg, *this->input_scan);
@@ -73,11 +73,11 @@ class LocalizationPublisher : public rclcpp::Node
             // double then = this->now().seconds();
 
             // Inspect the input scan and the map point clounds
-            int num_points_to_print = std::min(10, static_cast<int>(this->input_scan->points.size()));
-            for (int i = 0; i < num_points_to_print; ++i) {
-              RCLCPP_INFO(this->get_logger(), "Point %d: x=%.3f, y=%.3f, z=%.3f", 
-                          i, this->input_scan->points[i].x, this->input_scan->points[i].y, this->input_scan->points[i].z);
-            }
+            // int num_points_to_print = std::min(10, static_cast<int>(this->input_scan->points.size()));
+            // for (int i = 0; i < num_points_to_print; ++i) {
+            //   RCLCPP_INFO(this->get_logger(), "Point %d: x=%.3f, y=%.3f, z=%.3f", 
+            //               i, this->input_scan->points[i].x, this->input_scan->points[i].y, this->input_scan->points[i].z);
+            // }
 
             // filter points
 
@@ -98,8 +98,6 @@ class LocalizationPublisher : public rclcpp::Node
             // Convert the matrix to a string
             std::stringstream ss;
             ss << this->T;
-
-            // Log the matrix
             RCLCPP_INFO(this->get_logger(), "Matrix T:\n%s", ss.str().c_str());
 
     }
