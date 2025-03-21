@@ -38,6 +38,7 @@ class LocalizationPublisher : public rclcpp::Node
         {
             // Basic information about the point cloud
             RCLCPP_INFO(this->get_logger(), "Received point cloud:");
+            RCLCPP_INFO(this->get_logger(), "  Frame ID: %s", msg->header.frame_id.c_str());
             RCLCPP_INFO(this->get_logger(), "  Width: %u", msg->width);
             RCLCPP_INFO(this->get_logger(), "  Height: %u", msg->height);
         }
