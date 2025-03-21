@@ -99,8 +99,98 @@ class NanoGICPLocalization : public rclcpp::Node
             std::stringstream ss;
             ss << this->T;
             RCLCPP_INFO(this->get_logger(), "Matrix T:\n%s", ss.str().c_str());
+        }
 
-    }
+        /*
+        void debug() 
+        {
+            // Total length traversed
+            double length_traversed = 0.;
+            Eigen::Vector3f p_curr = Eigen::Vector3f(0., 0., 0.);
+            Eigen::Vector3f p_prev = Eigen::Vector3f(0., 0., 0.);
+            for (const auto& t : this->trajectory) {
+              if (p_prev == Eigen::Vector3f(0., 0., 0.)) {
+                p_prev = t.first;
+                continue;
+              }
+              p_curr = t.first;
+              double l = sqrt(pow(p_curr[0] - p_prev[0], 2) + pow(p_curr[1] - p_prev[1], 2) + pow(p_curr[2] - p_prev[2], 2));
+        
+              if (l >= 0.05) {
+                length_traversed += l;
+                p_prev = p_curr;
+              }
+            }
+      
+            if (length_traversed == 0) {
+              this->publish_keyframe_thread = std::thread( &dlo::OdomNode::publishKeyframe, this );
+              this->publish_keyframe_thread.detach();
+            }
+      
+            // Average computation time
+            double avg_comp_time = std::accumulate(this->comp_times.begin(), this->comp_times.end(), 0.0) / this->comp_times.size();
+      
+            // RAM Usage
+            double vm_usage = 0.0;
+            double resident_set = 0.0;
+            std::ifstream stat_stream("/proc/self/stat", std::ios_base::in); //get info from proc directory
+            std::string pid, comm, state, ppid, pgrp, session, tty_nr;
+            std::string tpgid, flags, minflt, cminflt, majflt, cmajflt;
+            std::string utime, stime, cutime, cstime, priority, nice;
+            std::string num_threads, itrealvalue, starttime;
+            unsigned long vsize;
+            long rss;
+            stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
+                        >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
+                        >> utime >> stime >> cutime >> cstime >> priority >> nice
+                        >> num_threads >> itrealvalue >> starttime >> vsize >> rss; // don't care about the rest
+            stat_stream.close();
+            long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // for x86-64 is configured to use 2MB pages
+            vm_usage = vsize / 1024.0;
+            resident_set = rss * page_size_kb;
+      
+            // CPU Usage
+            struct tms timeSample;
+            clock_t now;
+            double cpu_percent;
+            now = times(&timeSample);
+            if (now <= this->lastCPU || timeSample.tms_stime < this->lastSysCPU ||
+                timeSample.tms_utime < this->lastUserCPU) {
+                cpu_percent = -1.0;
+            } else {
+                cpu_percent = (timeSample.tms_stime - this->lastSysCPU) + (timeSample.tms_utime - this->lastUserCPU);
+                cpu_percent /= (now - this->lastCPU);
+                cpu_percent /= this->numProcessors;
+                cpu_percent *= 100.;
+            }
+            this->lastCPU = now;
+            this->lastSysCPU = timeSample.tms_stime;
+            this->lastUserCPU = timeSample.tms_utime;
+            this->cpu_percents.push_back(cpu_percent);
+            double avg_cpu_usage = std::accumulate(this->cpu_percents.begin(), this->cpu_percents.end(), 0.0) / this->cpu_percents.size();
+      
+            // Print to terminal
+            printf("\033[2J\033[1;1H");
+      
+            std::cout << std::endl << "==== Direct LiDAR Odometry v" << this->version_ << " ====" << std::endl;
+      
+            if (!this->cpu_type.empty()) {
+              std::cout << std::endl << this->cpu_type << " x " << this->numProcessors << std::endl;
+            }
+      
+            std::cout << std::endl << std::setprecision(4) << std::fixed;
+            std::cout << "Position    [xyz]  :: " << this->pose[0] << " " << this->pose[1] << " " << this->pose[2] << std::endl;
+            std::cout << "Orientation [wxyz] :: " << this->rotq.w() << " " << this->rotq.x() << " " << this->rotq.y() << " " << this->rotq.z() << std::endl;
+            std::cout << "Distance Traveled  :: " << length_traversed << " meters" << std::endl;
+            std::cout << "Distance to Origin :: " << sqrt(pow(this->pose[0]-this->origin[0],2) + pow(this->pose[1]-this->origin[1],2) + pow(this->pose[2]-this->origin[2],2)) << " meters" << std::endl;
+      
+            std::cout << std::endl << std::right << std::setprecision(2) << std::fixed;
+            std::cout << "Computation Time :: " << std::setfill(' ') << std::setw(6) << this->comp_times.back()*1000. << " ms    // Avg: " << std::setw(5) << avg_comp_time*1000. << std::endl;
+            std::cout << "Cores Utilized   :: " << std::setfill(' ') << std::setw(6) << (cpu_percent/100.) * this->numProcessors << " cores // Avg: " << std::setw(5) << (avg_cpu_usage/100.) * this->numProcessors << std::endl;
+            std::cout << "CPU Load         :: " << std::setfill(' ') << std::setw(6) << cpu_percent << " %     // Avg: " << std::setw(5) << avg_cpu_usage << std::endl;
+            std::cout << "RAM Allocation   :: " << std::setfill(' ') << std::setw(6) << resident_set/1000. << " MB    // VSZ: " << vm_usage/1000. << " MB" << std::endl;
+        }
+        */
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidarsub_;
         pcl::PointCloud<pcl::PointXYZ>::Ptr map_cloud;
