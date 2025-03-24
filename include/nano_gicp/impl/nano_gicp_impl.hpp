@@ -185,7 +185,7 @@ void NanoGICP<PointSource, PointTarget>::update_correspondences(const Eigen::Iso
   std::vector<float> k_sq_dists(1);
 
 #pragma omp parallel for num_threads(num_threads_) firstprivate(k_indices, k_sq_dists) schedule(guided, 8)
-  for (int i = 0; i < input_->size(); i++) {
+  for (size_t i = 0; i < input_->size(); i++) {
     PointTarget pt;
     pt.getVector4fMap() = trans_f * input_->at(i).getVector4fMap();
 
@@ -223,7 +223,7 @@ double NanoGICP<PointSource, PointTarget>::linearize(const Eigen::Isometry3d& tr
   }
 
 #pragma omp parallel for num_threads(num_threads_) reduction(+ : sum_errors) schedule(guided, 8)
-  for (int i = 0; i < input_->size(); i++) {
+  for (size_t i = 0; i < input_->size(); i++) {
     int target_index = correspondences_[i];
     if (target_index < 0) {
       continue;
@@ -274,7 +274,7 @@ double NanoGICP<PointSource, PointTarget>::compute_error(const Eigen::Isometry3d
   double sum_errors = 0.0;
 
 #pragma omp parallel for num_threads(num_threads_) reduction(+ : sum_errors) schedule(guided, 8)
-  for (int i = 0; i < input_->size(); i++) {
+  for (size_t i = 0; i < input_->size(); i++) {
     int target_index = correspondences_[i];
     if (target_index < 0) {
       continue;
@@ -307,13 +307,13 @@ bool NanoGICP<PointSource, PointTarget>::calculate_covariances(
   covariances.resize(cloud->size());
 
 #pragma omp parallel for num_threads(num_threads_) schedule(guided, 8)
-  for (int i = 0; i < cloud->size(); i++) {
+  for (size_t i = 0; i < cloud->size(); i++) {
     std::vector<int> k_indices;
     std::vector<float> k_sq_distances;
     kdtree.nearestKSearch(cloud->at(i), k_correspondences_, k_indices, k_sq_distances);
 
     Eigen::Matrix<double, 4, -1> neighbors(4, k_correspondences_);
-    for (int j = 0; j < k_indices.size(); j++) {
+    for (size_t j = 0; j < k_indices.size(); j++) {
       neighbors.col(j) = cloud->at(k_indices[j]).getVector4fMap().template cast<double>();
     }
 

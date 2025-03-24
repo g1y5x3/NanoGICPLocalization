@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(NanoGICPLocalization)
+project(nano_gicp_localization)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)

@@ -169,7 +169,7 @@ int KdTreeFLANN<PointT>::radiusSearch(const PointT &point, double radius,
 
   k_indices.resize(nFound);
   k_sqr_distances.resize(nFound);
-  for(int i=0; i<nFound; i++ ){
+  for(size_t i=0; i<nFound; i++ ){
     k_indices[i]       = indices_dist[i].first;
     k_sqr_distances[i] = indices_dist[i].second;
   }
