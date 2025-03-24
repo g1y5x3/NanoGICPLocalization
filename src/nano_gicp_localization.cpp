@@ -5,6 +5,10 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
 #include "pcl/io/pcd_io.h"
 #include "pcl/point_types.h"
 #include <pcl_conversions/pcl_conversions.h>
@@ -19,7 +23,14 @@ class NanoGICPLocalization : public rclcpp::Node
           input_scan(std::make_shared<pcl::PointCloud<pcl::PointXYZ>>()),
           T(Eigen::Matrix4f::Identity())
         {
-            // nano_gicp init
+            // Declare parameters with default values
+            this->declare_parameter("pointcloud_topic", "/spot/lidar/points");
+            this->declare_parameter("map_path", "src/spot_ros2_gazebo/spot_navigation/maps/simple_tunnel.pcd");
+            this->declare_parameter("base_frame", "base_link");
+            this->declare_parameter("odom_frame", "odom");
+
+            // Parameters init
+            // TODO: Later replaced by ros parameters
             this->gicp.setCorrespondenceRandomness(20);
             this->gicp.setMaxCorrespondenceDistance(0.5);
             this->gicp.setMaximumIterations(32);
@@ -28,18 +39,6 @@ class NanoGICPLocalization : public rclcpp::Node
             this->gicp.setRANSACIterations(5);
             this->gicp.setRANSACOutlierRejectionThreshold(1.0);
 
-            // Declare parameters with default values
-            this->declare_parameter("pointcloud_topic", "/spot/lidar/points");
-            this->declare_parameter("map_path", "src/spot_ros2_gazebo/spot_navigation/maps/simple_tunnel.pcd");
-
-            // Subcribe to LiDAR inputs
-            std::string pointcloud_topic = this->get_parameter("pointcloud_topic").as_string();
-            lidarsub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-                pointcloud_topic, 1, std::bind(&NanoGICPLocalization::icp_callback, this, std::placeholders::_1)
-            );
-
-            RCLCPP_INFO(this->get_logger(), "Subscribed to /spot/lidar/points");
-
             // Load map file
             std::string map_path = this->get_parameter("map_path").as_string(); 
             if (pcl::io::loadPCDFile<pcl::PointXYZ>(map_path, *map_cloud) == -1)
@@ -47,8 +46,19 @@ class NanoGICPLocalization : public rclcpp::Node
                 RCLCPP_ERROR(this->get_logger(), "Failed to load map file: %s", map_path.c_str());
                 return;
             }
-
             RCLCPP_INFO(this->get_logger(), "Successfully loaded map with %zu points", map_cloud->size());
+            
+            // Check whether /odom -> /base_link exists
+            tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+            tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+            // Subcribe to LiDAR inputs
+            std::string pointcloud_topic = this->get_parameter("pointcloud_topic").as_string();
+            lidarsub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+                pointcloud_topic, 1, std::bind(&NanoGICPLocalization::icp_callback, this, std::placeholders::_1)
+            );
+            RCLCPP_INFO(this->get_logger(), "Subscribed to /spot/lidar/points");
+
             RCLCPP_INFO(this->get_logger(), "Localization node initialized.");
 
         }
@@ -56,10 +66,15 @@ class NanoGICPLocalization : public rclcpp::Node
     private:
         void icp_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
         {
+            geometry_msgs::msg::TransformStamped t_odom_lidar;
+
             RCLCPP_INFO(this->get_logger(), "Received point cloud:");
             RCLCPP_INFO(this->get_logger(), "Frame ID: %s", msg->header.frame_id.c_str());
             RCLCPP_INFO(this->get_logger(), "Width: %u", msg->width);
             RCLCPP_INFO(this->get_logger(), "Height: %u", msg->height);
+
+            // Look up the transform from lidar_link to odom
+            t_odom_lidar = tf_buffer_->lookupTransform("odom", msg->header.frame_id, tf2::TimePointZero);
 
             // Convert sensor_msgs::PointCloud2 to pcl::PointCloud
             pcl::fromROSMsg(*msg, *this->input_scan);
@@ -79,7 +94,7 @@ class NanoGICPLocalization : public rclcpp::Node
             //               i, this->input_scan->points[i].x, this->input_scan->points[i].y, this->input_scan->points[i].z);
             // }
 
-            // filter points
+            // preprocess points
 
             // Quick test for nano_gicp
             pcl::PointCloud<PointType>::Ptr aligned = std::make_shared<pcl::PointCloud<PointType>>();
@@ -193,6 +208,8 @@ class NanoGICPLocalization : public rclcpp::Node
         */
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidarsub_;
+        std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};
+        std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
         pcl::PointCloud<pcl::PointXYZ>::Ptr map_cloud;
         pcl::PointCloud<pcl::PointXYZ>::Ptr input_scan;
         nano_gicp::NanoGICP<PointType, PointType> gicp;

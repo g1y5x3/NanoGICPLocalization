@@ -14,6 +14,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -47,6 +48,7 @@ target_link_libraries(nano_gicp_loc ${PCL_LIBRARIES} OpenMP::OpenMP_CXX Threads:
 ament_target_dependencies(nano_gicp_loc 
   rclcpp
   sensor_msgs
+  tf2_ros
   pcl_conversions
 )
 
